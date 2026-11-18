@@ -1,6 +1,6 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useKeepAwake } from 'expo-keep-awake';
+
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -10,6 +10,7 @@ import { Alert } from '@/lib/alert';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RouteMap } from '@/components/route-map';
+import { useSafeKeepAwake } from '@/hooks/use-safe-keep-awake';
 import { ACTIVITY_COLORS, IconButton, Row, T, type MciName } from '@/components/ui';
 import { api } from '@/data';
 import { useMe } from '@/data/hooks';
@@ -174,7 +175,7 @@ function PreStart() {
 }
 
 function Live() {
-  useKeepAwake();
+  useSafeKeepAwake();
   const { c } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
