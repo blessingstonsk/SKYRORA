@@ -25,6 +25,8 @@ if (Platform.OS !== 'web') {
 }
 
 const AUTH_SCREENS = ['welcome', 'sign-in', 'sign-up', 'forgot-password'];
+/** Phone-width column on tablets and the web, so layouts never stretch. */
+const APP_MAX_WIDTH = 560;
 
 export default function RootLayout() {
   const [qc] = useState(() => new QueryClient({
@@ -93,8 +95,9 @@ function Boot({ qc }: { qc: QueryClient }) {
   }
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: isDark ? '#030407' : '#E6EAF1' }}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
+      <View style={{ flex: 1, width: '100%', maxWidth: APP_MAX_WIDTH, alignSelf: 'center', backgroundColor: c.bg, overflow: 'hidden' }}>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg }, animation: 'slide_from_right' }}>
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="welcome" />
@@ -118,6 +121,7 @@ function Boot({ qc }: { qc: QueryClient }) {
         </Stack.Protected>
         <Stack.Screen name="auth-callback" />
       </Stack>
-    </>
+      </View>
+    </View>
   );
 }

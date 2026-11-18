@@ -1,10 +1,11 @@
 // Lightweight SVG charts (no native deps beyond react-native-svg).
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Platform, Pressable, View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
 
 import { useTheme } from '@/theme';
 
+import { useMountProgress, useTween } from './motion';
 import { T } from './ui';
 
 const FONT = Platform.OS === 'web' ? 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' : undefined;
@@ -36,6 +37,7 @@ export function BarChart({
   const bw = Math.max(3, Math.min(28, slot * 0.6));
   const labelEvery = Math.ceil(n / 8);
   const active = sel ?? (highlightLast ? n - 1 : null);
+  const grow = useMountProgress(700);
 
   return (
     <View onLayout={onLayout} accessibilityRole="image" accessibilityLabel={`Bar chart, ${data.length} bars`}>
@@ -44,7 +46,7 @@ export function BarChart({
           <Line key={f} x1={0} x2={w} y1={padT + chartH * (1 - f)} y2={padT + chartH * (1 - f)} stroke={c.border} strokeDasharray="3 5" />
         ))}
         {data.map((d, i) => {
-          const h = Math.max(d.value > 0 ? 3 : 0, (d.value / max) * chartH);
+          const h = Math.max(d.value > 0 ? 3 : 0, (d.value / max) * chartH) * grow;
           const x = i * slot + (slot - bw) / 2;
           const on = i === active;
           return (
@@ -55,7 +57,7 @@ export function BarChart({
                   {d.label}
                 </SvgText>
               ) : null}
-              {on && d.value > 0 ? (
+              {on && d.value > 0 && grow > 0.95 ? (
                 <SvgText fontFamily={FONT} x={Math.min(w - 20, Math.max(20, x + bw / 2))} y={padT + chartH - h - 6} fontSize={11} fill={c.text} textAnchor="middle" fontWeight="700">
                   {format(d.value)}
                 </SvgText>
@@ -80,6 +82,8 @@ export function LineChart({
   const { w, onLayout } = useWidth();
   const [sel, setSel] = useState<number | null>(null);
   const col = color ?? c.primary;
+  const gid = `area${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  const rise = useMountProgress(800);
   if (data.length === 0) return <View style={{ height }} />;
   const vals = data.map((d) => d.value).concat(goal != null ? [goal] : []);
   let min = Math.min(...vals);
@@ -90,7 +94,8 @@ export function LineChart({
   const padT = 24, padB = 20, padX = 6;
   const ch = height - padT - padB;
   const x = (i: number) => padX + (data.length === 1 ? (w - 2 * padX) / 2 : (i / (data.length - 1)) * (w - 2 * padX));
-  const y = (v: number) => padT + ch * (1 - (v - min) / (max - min));
+  const base = padT + ch;
+  const y = (v: number) => base + (padT + ch * (1 - (v - min) / (max - min)) - base) * rise;
   // Smooth path (Catmull-Rom → Bézier)
   let d = `M ${x(0)} ${y(data[0].value)}`;
   for (let i = 0; i < data.length - 1; i++) {
@@ -109,7 +114,7 @@ export function LineChart({
     <View onLayout={onLayout}>
       <Svg width={w} height={height}>
         <Defs>
-          <LinearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+          <LinearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor={col} stopOpacity={0.35} />
             <Stop offset="1" stopColor={col} stopOpacity={0} />
           </LinearGradient>
@@ -120,7 +125,7 @@ export function LineChart({
             <SvgText fontFamily={FONT} x={w - 4} y={y(goal) - 5} fontSize={10} fill={c.warm} textAnchor="end" fontWeight="700">Goal {format(goal)}</SvgText>
           </G>
         ) : null}
-        <Path d={area} fill="url(#area)" />
+        <Path d={area} fill={`url(#${gid})`} />
         <Path d={d} stroke={col} strokeWidth={2.5} fill="none" strokeLinecap="round" />
         {showDots && data.length <= 40
           ? data.map((p, i) => <Circle key={i} cx={x(i)} cy={y(p.value)} r={i === active ? 5 : 2.5} fill={i === active ? col : c.surface} stroke={col} strokeWidth={2} />)
@@ -144,12 +149,12 @@ export function Ring({ pct, size = 120, stroke = 12, color, children, track }: {
   const { c } = useTheme();
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
-  const p = Math.max(0, Math.min(100, pct));
+  const p = useTween(Math.max(0, Math.min(100, pct)), 1000);
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="progressbar" accessibilityValue={{ now: Math.round(p), min: 0, max: 100 }}>
       <Svg width={size} height={size} style={{ position: 'absolute' }}>
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={track ?? c.surface3} strokeWidth={stroke} fill="none" />
-        {p > 0 ? (
+        {p >= 1.5 ? (
           <G transform={`rotate(-90 ${size / 2} ${size / 2})`}>
             <Circle cx={size / 2} cy={size / 2} r={r} stroke={color ?? c.primary} strokeWidth={stroke} fill="none"
               strokeDasharray={`${(p / 100) * circ} ${circ}`} strokeLinecap="round" />

@@ -26,10 +26,10 @@ export default function Challenges() {
         <T v="h1">Challenges</T>
         <T v="body" color={c.muted}>Push yourself, earn badges, climb the board.</T>
       </View>
-      <Card onPress={() => router.push('/leaderboard')} padded={false} style={{ paddingHorizontal: space(4) }}>
+      <Card padded={false} style={{ paddingHorizontal: space(4) }}>
         <ListItem icon="podium" iconColor={c.warm} title="Leaderboards" subtitle="Friends, local and global rankings" onPress={() => router.push('/leaderboard')} />
       </Card>
-      <Card onPress={() => router.push('/records')} padded={false} style={{ paddingHorizontal: space(4) }}>
+      <Card padded={false} style={{ paddingHorizontal: space(4) }}>
         <ListItem icon="ribbon" iconColor={c.secondary} title="Badges & records" subtitle={`${ach.filter((a) => a.earned_at).length} of ${ach.length} badges earned`} onPress={() => router.push('/records')} />
       </Card>
       <Segmented options={[{ key: 'active', label: 'Discover' }, { key: 'joined', label: 'Joined' }, { key: 'done', label: 'Completed' }]} value={tab} onChange={setTab} />

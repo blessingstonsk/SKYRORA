@@ -14,6 +14,7 @@ import { radius, space, useTheme } from '@/theme';
 
 import { ActivityCard } from './activity-card';
 import { BadgeTile } from './badges';
+import { Appear } from './motion';
 import { ACTIVITY_COLORS, Avatar, Button, Card, Empty, IconButton, ListItem, Loading, ProgressBar, Row, SectionTitle, T, type MciName } from './ui';
 
 export function ProfileView({ userId, own }: { userId: string; own: boolean }) {
@@ -152,7 +153,7 @@ export function ProfileView({ userId, own }: { userId: string; own: boolean }) {
       data={locked ? [] : feedItems}
       keyExtractor={(a) => a.id}
       ListHeaderComponent={header}
-      renderItem={({ item }) => <View style={{ paddingHorizontal: space(4), marginTop: space(4) }}><ActivityCard a={item} showUser={false} /></View>}
+      renderItem={({ item, index }) => <Appear index={index % 10} style={{ paddingHorizontal: space(4), marginTop: space(4) }}><ActivityCard a={item} showUser={false} /></Appear>}
       ListEmptyComponent={locked ? undefined : theirs.isLoading ? <Loading /> : <View style={{ padding: space(4) }}><Empty icon="walk-outline" title="No activities yet" /></View>}
       ListFooterComponent={<View style={{ height: 130 }}>{theirs.isFetchingNextPage ? <Loading /> : null}</View>}
       onEndReached={() => theirs.hasNextPage && !theirs.isFetchingNextPage && theirs.fetchNextPage()}

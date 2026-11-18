@@ -10,6 +10,7 @@ import { ACTIVITY_META, duration, km, pace, relativeTime, speedKmh } from '@/lib
 import type { Activity } from '@/lib/types';
 import { radius, space, useTheme } from '@/theme';
 
+import { PressScale } from './motion';
 import { RoutePreview } from './route-preview';
 import { ACTIVITY_COLORS, ActivityIcon, Avatar, Row, Stat, T } from './ui';
 
@@ -93,10 +94,10 @@ export const ActivityCard = memo(function ActivityCard({ a, showUser = true }: {
 function Action({ icon, color, label, onPress, a11y }: { icon: React.ComponentProps<typeof Ionicons>['name']; color: string; label: string; onPress(): void; a11y: string }) {
   const { c } = useTheme();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={a11y} hitSlop={4}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 40, borderRadius: 20, backgroundColor: pressed ? c.surface2 : 'transparent' })}>
+    <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={a11y} hitSlop={4} scaleTo={0.82}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 40, borderRadius: 20 }}>
       <Ionicons name={icon} size={20} color={color} />
       {label ? <T v="small" color={c.muted} style={{ fontWeight: '700' }}>{label}</T> : null}
-    </Pressable>
+    </PressScale>
   );
 }

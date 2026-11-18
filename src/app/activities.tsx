@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, View } from 'react-native';
 
+import { Appear } from '@/components/motion';
 import { RoutePreview } from '@/components/route-preview';
 import { ACTIVITY_COLORS, ActivityIcon, Chip, Empty, Header, Loading, Row, T, type MciName } from '@/components/ui';
 import { useMyActivities } from '@/data/hooks';
@@ -35,7 +36,8 @@ export default function Activities() {
           initialNumToRender={12}
           windowSize={9}
           ListEmptyComponent={<Empty icon="walk-outline" title="No activities" />}
-          renderItem={({ item: a }) => (
+          renderItem={({ item: a, index }) => (
+            <Appear index={index % 12}>
             <Pressable onPress={() => router.push(`/activity/${a.id}`)} style={({ pressed }) => ({ flexDirection: 'row', gap: space(3), alignItems: 'center', backgroundColor: c.surface, borderRadius: radius.lg, padding: space(3), borderWidth: 1, borderColor: c.border, opacity: pressed ? 0.85 : 1 })}>
               {a.map_polyline ? (
                 <RoutePreview polyline={a.map_polyline} height={56} style={{ width: 56 }} rounded={12} color={ACTIVITY_COLORS[a.type]} />
@@ -50,6 +52,7 @@ export default function Activities() {
                 </Row>
               </View>
             </Pressable>
+            </Appear>
           )}
         />
       )}

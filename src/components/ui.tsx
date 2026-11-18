@@ -3,7 +3,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useEffect, useState, type ComponentProps, type ReactNode } from 'react';
+import { Children, useEffect, useState, type ComponentProps, type ReactNode } from 'react';
 import {
   ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
   type PressableProps, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle,
@@ -13,6 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ACTIVITY_META, initials } from '@/lib/format';
 import type { ActivityType } from '@/lib/types';
 import { gradients, radius, space, type as typo, useTheme } from '@/theme';
+
+import { Appear, CountUp, PageSkeleton, PressScale } from './motion';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 export type MciName = ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -49,7 +51,7 @@ export function Screen({
           showsVerticalScrollIndicator={false}
           refreshControl={refresh as never}
           keyboardShouldPersistTaps="handled">
-          {children}
+          {Children.toArray(children).map((child, i) => <Appear key={i} index={i}>{child}</Appear>)}
         </ScrollView>
       ) : (
         <View style={[{ flex: 1 }, pad, style]}>{children}</View>
@@ -63,14 +65,14 @@ export function Header({ title, back = true, right, subtitle }: { title?: string
   const { c } = useTheme();
   return (
     <View style={styles.header}>
-      {back ? (
-        <IconButton icon="chevron-back" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} label="Back" />
-      ) : <View style={{ width: 40 }} />}
+      <View style={styles.headerSide}>
+        {back ? <IconButton icon="chevron-back" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} label="Back" /> : null}
+      </View>
       <View style={{ flex: 1, alignItems: 'center' }}>
         {title ? <T v="h3" numberOfLines={1}>{title}</T> : null}
         {subtitle ? <T v="small" color={c.muted}>{subtitle}</T> : null}
       </View>
-      <View style={{ minWidth: 40, alignItems: 'flex-end' }}>{right}</View>
+      <View style={[styles.headerSide, { alignItems: 'flex-end' }]}>{right}</View>
     </View>
   );
 }
@@ -84,9 +86,9 @@ export function Card({ children, style, onPress, padded = true }: { children: Re
   const base = [{ backgroundColor: c.surface, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border }, padded && { padding: space(4) }, style];
   if (!onPress) return <View style={base}>{children}</View>;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [base, pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] }]}>
+    <PressScale onPress={onPress} accessibilityRole="button" scaleTo={0.98} style={base}>
       {children}
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -134,13 +136,14 @@ export function Button({
     </Row>
   );
   return (
-    <Pressable
+    <PressScale
       onPress={onPress}
       disabled={disabled || loading}
       accessibilityRole="button"
       accessibilityLabel={title}
-      style={({ pressed }) => [
-        { borderRadius: radius.pill, overflow: 'hidden', opacity: disabled ? 0.45 : pressed ? 0.85 : 1 },
+      scaleTo={0.96}
+      style={[
+        { borderRadius: radius.pill, overflow: 'hidden', opacity: disabled ? 0.45 : 1 },
         variant === 'secondary' && { backgroundColor: c.surface2 },
         variant === 'danger' && { backgroundColor: c.danger },
         variant === 'outline' && { borderWidth: 1, borderColor: c.border },
@@ -149,48 +152,62 @@ export function Button({
       {variant === 'primary' ? (
         <LinearGradient colors={['#2EE6C5', '#36D3E6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>{content}</LinearGradient>
       ) : content}
-    </Pressable>
+    </PressScale>
   );
 }
 
 export function IconButton({ icon, onPress, label, size = 22, color, bg, badge }: { icon: IconName; onPress?: () => void; label: string; size?: number; color?: string; bg?: string; badge?: number }) {
   const { c } = useTheme();
   return (
-    <Pressable onPress={onPress} hitSlop={8} accessibilityRole="button" accessibilityLabel={label}
-      style={({ pressed }) => [{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: bg ?? c.surface2 }, pressed && { opacity: 0.7 }]}>
+    <PressScale onPress={onPress} hitSlop={8} accessibilityRole="button" accessibilityLabel={label} scaleTo={0.88}
+      style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: bg ?? c.surface2 }}>
       <Ionicons name={icon} size={size} color={color ?? c.text} />
       {badge ? (
         <View style={{ position: 'absolute', top: 4, right: 4, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: c.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 }}>
           <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{badge > 9 ? '9+' : badge}</Text>
         </View>
       ) : null}
-    </Pressable>
+    </PressScale>
   );
 }
 
 export function Chip({ label, active, onPress, icon }: { label: string; active?: boolean; onPress?: () => void; icon?: MciName }) {
   const { c } = useTheme();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: active }}
-      style={({ pressed }) => [{
-        flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, height: 36, borderRadius: radius.pill,
-        backgroundColor: active ? c.text : c.surface2, opacity: pressed ? 0.8 : 1,
-      }]}>
+    <PressScale onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: active }} scaleTo={0.93}
+      style={{
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 14, height: 36, borderRadius: radius.pill,
+        backgroundColor: active ? c.text : c.surface2,
+      }}>
       {icon ? <MaterialCommunityIcons name={icon} size={16} color={active ? c.bg : c.muted} /> : null}
       <T v="small" color={active ? c.bg : c.text} style={{ fontWeight: '700' }}>{label}</T>
-    </Pressable>
+    </PressScale>
   );
 }
 
 export function Segmented<K extends string>({ options, value, onChange }: { options: { key: NoInfer<K>; label: string }[]; value: K; onChange(k: NoInfer<K>): void }) {
   const { c } = useTheme();
+  const [width, setWidth] = useState(0);
+  const index = Math.max(0, options.findIndex((o) => o.key === value));
+  const [x] = useState(() => new Animated.Value(index));
+  useEffect(() => {
+    Animated.spring(x, { toValue: index, useNativeDriver: Platform.OS !== 'web', speed: 18, bounciness: 5 }).start();
+  }, [index, x]);
+  const seg = width ? (width - 8) / options.length : 0;
   return (
-    <View style={{ flexDirection: 'row', backgroundColor: c.surface2, borderRadius: radius.pill, padding: 4 }}>
+    <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ flexDirection: 'row', backgroundColor: c.surface2, borderRadius: radius.pill, padding: 4 }}>
+      {seg ? (
+        <Animated.View pointerEvents="none" style={{
+          position: 'absolute', top: 4, left: 4, width: seg, height: 34, borderRadius: radius.pill, backgroundColor: c.surface,
+          borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
+          transform: [{ translateX: x.interpolate({ inputRange: [0, 1], outputRange: [0, seg] }) }],
+        }} />
+      ) : null}
       {options.map((o) => {
         const on = o.key === value;
         return (
           <Pressable key={o.key} onPress={() => onChange(o.key)} accessibilityRole="tab" accessibilityState={{ selected: on }}
-            style={{ flex: 1, height: 34, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? c.surface : 'transparent' }}>
+            style={{ flex: 1, height: 34, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' }}>
             <T v="small" color={on ? c.text : c.muted} style={{ fontWeight: '700' }}>{o.label}</T>
           </Pressable>
         );
@@ -205,7 +222,7 @@ export function Stat({ value, unit, label, big, color, align = 'left' }: { value
   return (
     <View style={{ alignItems: align === 'center' ? 'center' : 'flex-start' }}>
       <Row gap={1} style={{ alignItems: 'baseline' }}>
-        <T v={big ? 'hero' : 'stat'} color={color}>{value}</T>
+        <CountUp text={value} style={[typo[big ? 'hero' : 'stat'], { color: color ?? c.text }]} />
         {unit ? <T v="small" color={c.muted} style={{ fontWeight: '700' }}>{unit}</T> : null}
       </Row>
       <T v="label" color={c.muted} style={{ marginTop: 2 }}>{label}</T>
@@ -216,12 +233,14 @@ export function Stat({ value, unit, label, big, color, align = 'left' }: { value
 export function MiniStat({ icon, value, label, color }: { icon: IconName; value: string; label: string; color: string }) {
   const { c } = useTheme();
   return (
-    <View style={{ flex: 1, minWidth: 140, backgroundColor: c.surface, borderRadius: radius.lg, padding: space(4), borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, gap: space(2) }}>
+    <View style={{ flex: 1, minWidth: 140, minHeight: 128, backgroundColor: c.surface, borderRadius: radius.lg, padding: space(4), borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, gap: space(2), justifyContent: 'space-between' }}>
       <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: color + '22', alignItems: 'center', justifyContent: 'center' }}>
         <Ionicons name={icon} size={17} color={color} />
       </View>
-      <T v="stat" style={{ fontSize: 24 }}>{value}</T>
-      <T v="small" color={c.muted}>{label}</T>
+      <View style={{ gap: 2 }}>
+        <CountUp text={value} numberOfLines={1} style={[typo.stat, { fontSize: 24, color: c.text }]} />
+        <T v="small" color={c.muted} numberOfLines={1}>{label}</T>
+      </View>
     </View>
   );
 }
@@ -300,12 +319,7 @@ export function Empty({ icon, title, body, action, onAction }: { icon: IconName;
 }
 
 export function Loading() {
-  const { c } = useTheme();
-  return (
-    <View style={{ paddingVertical: space(12), alignItems: 'center' }}>
-      <ActivityIndicator color={c.primary} />
-    </View>
-  );
+  return <PageSkeleton />;
 }
 
 export function ErrorNote({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
@@ -359,5 +373,6 @@ export function ListItem({ icon, title, subtitle, right, onPress, danger, iconCo
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space(4), paddingVertical: space(2), gap: space(2) },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space(4), paddingVertical: space(2), gap: space(2), minHeight: 56 },
+  headerSide: { width: 96, justifyContent: 'center' },
 });
